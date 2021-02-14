@@ -5,8 +5,13 @@
  */
 import React from 'react';
 import * as swing from 'swing';
+declare enum ReactSwingStackStyle {
+    DEFAULT = "DEFAULT",
+    DECK = "DECK"
+}
 interface IReactSwingProps {
     setStack: (stack: swing.Stack) => void;
+    stackStyle: ReactSwingStackStyle;
     config: any;
 }
 declare type TReactSwing = React.ForwardRefExoticComponent<IReactSwingProps> & {

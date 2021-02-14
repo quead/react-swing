@@ -1,6 +1,6 @@
 /**
  * @project react-swing
- * Created by ssanjun on 2016. 7. 12..
+ * Created by quead
  */
 
 var webpack = require('webpack');
@@ -23,10 +23,14 @@ module.exports = {
         loaders: ['babel-loader'],
         exclude: /node_modules/,
       },
+      {
+        test: /\.css$/i,
+        use: ["style-loader", "css-loader"],
+      },
     ],
   },
   resolve: {
-    extensions: ['.js'],
+    extensions: ['.js', '.css'],
   },
   plugins: [new webpack.NoEmitOnErrorsPlugin()],
 };

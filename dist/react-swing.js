@@ -26,7 +26,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -48,8 +48,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 var react_1 = __importStar(require("react"));
 var swing = __importStar(require("swing"));
+var ReactSwingStackStyle;
+(function (ReactSwingStackStyle) {
+    ReactSwingStackStyle["DEFAULT"] = "DEFAULT";
+    ReactSwingStackStyle["DECK"] = "DECK";
+})(ReactSwingStackStyle || (ReactSwingStackStyle = {}));
 var ReactSwing = react_1.forwardRef(function (_a, ref) {
-    var children = _a.children, config = _a.config, setStack = _a.setStack, restProps = __rest(_a, ["children", "config", "setStack"]);
+    var children = _a.children, config = _a.config, _b = _a.stackStyle, stackStyle = _b === void 0 ? ReactSwingStackStyle.DEFAULT : _b, setStack = _a.setStack, restProps = __rest(_a, ["children", "config", "stackStyle", "setStack"]);
     var stack = react_1.useRef(swing.Stack(config || {})).current;
     var childElements = react_1.useRef([]).current;
     react_1.default.Children.forEach(children, function (_, index) {
@@ -91,16 +96,39 @@ var ReactSwing = react_1.forwardRef(function (_a, ref) {
         }
         return result;
     }, {});
-    return (react_1.default.createElement("div", __assign({}, tagProps, { ref: ref }), react_1.default.Children.map(children, function (child, index) {
-        var childProps = Object.keys(child.props).reduce(function (result, key) {
-            if (ReactSwing.EVENTS.indexOf(key) === -1) {
-                result[key] = child.props[key];
-            }
-            return result;
-        }, {});
-        childProps.ref = childElements[index];
-        return react_1.default.createElement(child.type, childProps);
-    })));
+    var renderStack = function (stackStyle) {
+        switch (stackStyle) {
+            case ReactSwingStackStyle.DECK:
+                return renderDeckStack();
+            default:
+                return renderDefaultStack();
+        }
+    };
+    var renderDeckStack = function () {
+        return react_1.default.Children.map(children, function (child, index) {
+            var childProps = Object.keys(child.props).reduce(function (result, key) {
+                if (ReactSwing.EVENTS.indexOf(key) === -1) {
+                    result[key] = child.props[key];
+                }
+                return result;
+            }, {});
+            childProps.ref = childElements[index];
+            return (react_1.default.createElement("div", __assign({}, tagProps, { ref: ref }), react_1.default.createElement(child.type, childProps)));
+        });
+    };
+    var renderDefaultStack = function () {
+        return (react_1.default.createElement("div", __assign({}, tagProps, { ref: ref }), react_1.default.Children.map(children, function (child, index) {
+            var childProps = Object.keys(child.props).reduce(function (result, key) {
+                if (ReactSwing.EVENTS.indexOf(key) === -1) {
+                    result[key] = child.props[key];
+                }
+                return result;
+            }, {});
+            childProps.ref = childElements[index];
+            return react_1.default.createElement(child.type, childProps);
+        })));
+    };
+    return react_1.default.createElement(react_1.default.Fragment, null, renderStack(stackStyle));
 });
 ReactSwing.EVENTS = [
     'throwout',

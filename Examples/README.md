@@ -5,8 +5,10 @@
 ```
     cd ..
     npm install
-    cd Examples
-    node ../node_modules/gulp/bin/gulp.js
+    cd Examples/default
+    or
+    cd Examples/deck
+    node ../../node_modules/gulp/bin/gulp.js
 ```
 
 check http://localhost:8000 in your browser

@@ -8,8 +8,14 @@
 import React, { useRef, useEffect, forwardRef } from 'react';
 import * as swing from 'swing';
 
+enum ReactSwingStackStyle {
+  DEFAULT = 'DEFAULT',
+  DECK = 'DECK',
+}
+
 interface IReactSwingProps {
   setStack: (stack: swing.Stack) => void;
+  stackStyle: ReactSwingStackStyle;
   config: any;
 }
 
@@ -18,60 +24,69 @@ type TReactSwing = React.ForwardRefExoticComponent<IReactSwingProps> & {
   DIRECTION: typeof swing.Direction;
 };
 
-const ReactSwing = forwardRef<HTMLDivElement, IReactSwingProps>(({ children, config, setStack, ...restProps }, ref) => {
-  const stack = useRef(swing.Stack(config || {})).current;
-  const childElements = useRef<React.RefObject<HTMLElement>[]>([]).current;
+const ReactSwing = forwardRef<HTMLDivElement, IReactSwingProps>(
+  ({ children, config, stackStyle = ReactSwingStackStyle.DEFAULT, setStack, ...restProps }, ref) => {
+    const stack = useRef(swing.Stack(config || {})).current;
+    const childElements = useRef<React.RefObject<HTMLElement>[]>([]).current;
 
-  React.Children.forEach(children, (_, index) => {
-    childElements[index] = React.createRef();
-  });
-
-  useEffect(() => {
-    // bind events
-    ReactSwing.EVENTS.forEach((eventName) => {
-      if (typeof restProps[eventName] === 'function') {
-        stack.on(eventName, restProps[eventName]);
-      }
+    React.Children.forEach(children, (_, index) => {
+      childElements[index] = React.createRef();
     });
-  }, []);
 
-  useEffect(() => {
-    // create card
-    React.Children.forEach(children, (child, index) => {
-      const element = childElements[index];
-
-      if (element && element.current) {
-        const existCard = stack.getCard(element.current);
-        if (existCard) {
-          existCard.destroy();
+    useEffect(() => {
+      // bind events
+      ReactSwing.EVENTS.forEach((eventName) => {
+        if (typeof restProps[eventName] === 'function') {
+          stack.on(eventName, restProps[eventName]);
         }
+      });
+    }, []);
 
-        const card = stack.createCard(element.current);
+    useEffect(() => {
+      // create card
+      React.Children.forEach(children, (child, index) => {
+        const element = childElements[index];
 
-        ReactSwing.EVENTS.forEach((eventName) => {
-          if ((child as React.ReactElement<any>).props[eventName]) {
-            card.on(eventName, (child as React.ReactElement<any>).props[eventName]);
+        if (element && element.current) {
+          const existCard = stack.getCard(element.current);
+          if (existCard) {
+            existCard.destroy();
           }
-        });
+
+          const card = stack.createCard(element.current);
+
+          ReactSwing.EVENTS.forEach((eventName) => {
+            if ((child as React.ReactElement<any>).props[eventName]) {
+              card.on(eventName, (child as React.ReactElement<any>).props[eventName]);
+            }
+          });
+        }
+      });
+
+      if (typeof setStack === 'function') {
+        (stack as any).childElements = childElements;
+        setStack(stack);
       }
-    });
+    }, [React.Children.count(children)]);
 
-    if (typeof setStack === 'function') {
-      (stack as any).childElements = childElements;
-      setStack(stack);
-    }
-  }, [React.Children.count(children)]);
+    const tagProps = Object.keys(restProps).reduce((result, key) => {
+      if (ReactSwing.EVENTS.indexOf(key as swing.Event) === -1) {
+        result[key] = restProps[key];
+      }
+      return result;
+    }, {});
 
-  const tagProps = Object.keys(restProps).reduce((result, key) => {
-    if (ReactSwing.EVENTS.indexOf(key as swing.Event) === -1) {
-      result[key] = restProps[key];
-    }
-    return result;
-  }, {});
+    const renderStack = (stackStyle: ReactSwingStackStyle) => {
+      switch (stackStyle) {
+        case ReactSwingStackStyle.DECK:
+          return renderDeckStack();
+        default:
+          return renderDefaultStack();
+      }
+    };
 
-  return (
-    <div {...tagProps} ref={ref}>
-      {React.Children.map(children, (child, index) => {
+    const renderDeckStack = () => {
+      return React.Children.map(children, (child, index) => {
         const childProps = Object.keys((child as React.ReactElement<any>).props).reduce((result, key) => {
           if (ReactSwing.EVENTS.indexOf(key as swing.Event) === -1) {
             result[key] = (child as React.ReactElement<any>).props[key];
@@ -79,11 +94,33 @@ const ReactSwing = forwardRef<HTMLDivElement, IReactSwingProps>(({ children, con
           return result;
         }, {});
         (childProps as any).ref = childElements[index];
-        return React.createElement((child as React.ReactElement<any>).type, childProps);
-      })}
-    </div>
-  );
-}) as TReactSwing;
+        return (
+          <div {...tagProps} ref={ref}>
+            {React.createElement((child as React.ReactElement<any>).type, childProps)}
+          </div>
+        );
+      });
+    };
+
+    const renderDefaultStack = () => {
+      return (
+        <div {...tagProps} ref={ref}>
+          {React.Children.map(children, (child, index) => {
+            const childProps = Object.keys((child as React.ReactElement<any>).props).reduce((result, key) => {
+              if (ReactSwing.EVENTS.indexOf(key as swing.Event) === -1) {
+                result[key] = (child as React.ReactElement<any>).props[key];
+              }
+              return result;
+            }, {});
+            (childProps as any).ref = childElements[index];
+            return React.createElement((child as React.ReactElement<any>).type, childProps);
+          })}
+        </div>
+      );
+    };
+    return <>{renderStack(stackStyle)}</>;
+  },
+) as TReactSwing;
 
 ReactSwing.EVENTS = [
   'throwout',
